@@ -37,6 +37,12 @@ if [ -f /config/zmeventnotification.ini ]; then
    ln -sf /config/zmeventnotification.ini /etc/zm/zmeventnotification.ini
 fi
 
+# Handle the apache ssl configuration file
+if [ -f /config/default-ssl.conf ]; then
+  echo "Moving ssl configuration"
+  ln -sf /config/default-ssl.conf /etc/apache2/sites-enabled/default-ssl.conf
+fi
+
 if [ -f /var/cache/zoneminder/configured ]; then
         echo 'already configured.'
         while !(mysql_ready)
