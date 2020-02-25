@@ -12,6 +12,7 @@ chown www-data:www-data /var/run/zm
 sed  -i "s|memory_limit = .*|memory_limit = ${PHP_MEMORY_LIMIT:-512M}|" /etc/php/7.2/apache2/php.ini
 #to fix problem with data.timezone that appear at 1.28.108 for some reason
 sed  -i "s|\;date.timezone =|date.timezone = \"${TZ:-America/New_York}\"|" /etc/php/7.2/apache2/php.ini
+echo ${TZ:-America/New_York} > /etc/timezone
 #if ZM_DB_HOST variable is provided in container use it as is, if not left as localhost
 ZM_DB_HOST=${ZM_DB_HOST:-localhost}
 sed  -i "s|ZM_DB_HOST=localhost|ZM_DB_HOST=$ZM_DB_HOST|" /etc/zm/zm.conf
@@ -36,12 +37,6 @@ if [ -f /config/zmeventnotification.ini ]; then
    ln -sf /config/zmeventnotification.ini /etc/zm/zmeventnotification.ini
 fi
 
-# Handle the apache ssl configuration file
-if [ -f /config/default-ssl.conf ]; then
-   echo "Moving ssl configuration"
-   ln -sf /config/default-ssl.conf /etc/apache2/sites-enabled/default-ssl.conf
-fi
-
 if [ -f /var/cache/zoneminder/configured ]; then
         echo 'already configured.'
         while !(mysql_ready)
@@ -59,6 +54,11 @@ else
         
         chown -R root:www-data /var/cache/zoneminder /etc/zm/zm.conf
         chmod -R 770 /var/cache/zoneminder /etc/zm/zm.conf
+        while !(mysql_ready)
+        do
+          sleep 3
+          echo "waiting for mysql ..."
+        done
         echo "SET GLOBAL sql_mode = 'NO_ENGINE_SUBSTITUTION';" | mysql -u $MYSQL_ROOT -p$MYSQL_ROOT_PASSWORD -h $ZM_DB_HOST
         mysql -u $MYSQL_ROOT -p$MYSQL_ROOT_PASSWORD -h $ZM_DB_HOST < /usr/share/zoneminder/db/zm_create.sql   
         date > /var/cache/zoneminder/dbcreated

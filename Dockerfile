@@ -1,5 +1,5 @@
 #name of container: docker-zoneminder
-#versison of container: 0.6.2
+#versison of container: 0.6.3
 FROM quantumobject/docker-baseimage:18.04
 LABEL maintainer="Angel Rodriguez <angel@quantumobject.com>"
 
@@ -7,7 +7,7 @@ ENV TZ America/New_York
 
 # Update the container
 # Installation of nesesary package/software for this containers...
-RUN echo "deb http://ppa.launchpad.net/iconnor/zoneminder-1.32/ubuntu `cat /etc/container_environment/DISTRIB_CODENAME` main" >> /etc/apt/sources.list  \
+RUN echo "deb http://ppa.launchpad.net/iconnor/zoneminder-1.34/ubuntu `cat /etc/container_environment/DISTRIB_CODENAME` main" >> /etc/apt/sources.list  \
     && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 776FFB04 \
     && echo $TZ > /etc/timezone && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends \
                                         libvlc-dev  \
@@ -48,7 +48,6 @@ RUN chmod +x /etc/my_init.d/startup.sh
 
 #pre-config scritp for different service that need to be run when container image is create 
 #maybe include additional software that need to be installed ... with some service running ... like example mysqld
-COPY default-ssl-apache.conf /etc/apache2/sites-enabled/default-ssl.conf
 COPY pre-conf.sh /sbin/pre-conf
 RUN chmod +x /sbin/pre-conf ; sync \
     && /bin/bash -c /sbin/pre-conf \
@@ -82,7 +81,7 @@ RUN perl -MCPAN -e "install Net::MQTT::Simple"
 VOLUME /var/backups /var/cache/zoneminder /config
 # to allow access from outside of the container  to the container service
 # at that ports need to allow access from firewall if need to access it outside of the server. 
-EXPOSE 80 9000 443 6802
+EXPOSE 80 9000 6802
 
 # Use baseimage-docker's init system.
 CMD ["/sbin/my_init"]
