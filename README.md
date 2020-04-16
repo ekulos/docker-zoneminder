@@ -1,6 +1,6 @@
 # docker-zoneminder
 
-Docker container for [zoneminder v1.34.0][3]
+Docker container for [zoneminder v1.34.9][3]
 
 "ZoneMinder the top Linux video camera security and surveillance solution. ZoneMinder is intended for use in single or multi-camera video security applications, including commercial or home CCTV, theft prevention and child, family member or home monitoring and other domestic care scenarios such as nanny cam installations. It supports capture, analysis, recording, and monitoring of video data coming from one or more video or network cameras attached to a Linux system. ZoneMinder also support web and semi-automatic control of Pan/Tilt/Zoom cameras using a variety of protocols. It is suitable for use as a DIY home video security system and for commercial or professional video security and surveillance. It can also be integrated into a home automation system via X.10 or other protocols. If you're looking for a low cost CCTV system or a more flexible alternative to cheap DVR systems then why not give ZoneMinder a try?"
 
@@ -23,9 +23,17 @@ To run with MySQL in a separate container use the command below:
 
 ```bash
 docker network create net
-docker run -d -e TZ=America/New_York -e MYSQL_USER=zmuser -e MYSQL_PASSWORD=zmpass -e MYSQL_DATABASE=zm -e MYSQL_ROOT_PASSWORD=mysqlpsswd -e MYSQL_ROOT_HOST=% --net net --name db mysql/mysql-server:5.7
-echo "wait until MySQL startup..."
+docker run -d -e TZ=America/New_York -e MYSQL_USER=zmuser -e MYSQL_PASSWORD=zmpass -e MYSQL_DATABASE=zm -e MYSQL_ROOT_HOST=% --net net --name db mysql/mysql-server:5.7
+
 docker run -d --shm-size=4096m -e TZ=America/New_York -e ZM_DB_HOST=db --net net --name zm -p 80:80 quantumobject/docker-zoneminder:1.34
+```
+
+## For newest version of database mysql and mariadb
+
+```bash
+docker run -d .....-....... -e MYSQL_RANDOM_ROOT_PASSWORD=yes --net net --name db mysql/mysql-server --disable-log-bin --default-authentication-plugin=mysql_native_password
+
+docker run -d .....-....... -e MYSQL_RANDOM_ROOT_PASSWORD=yes --net net --name db mariadb --disable-log-bin --default-authentication-plugin=mysql_native_password
 ```
 
 ## Set the timezone per environment variable
@@ -40,11 +48,40 @@ or in yml:
 
 Default value is America/New_York .
 
+## Other environment variable that can be define at docker run command for zoneminder image
+
+     -e ZM_DB_HOST=db
+     
+     -e ZM_DB_NAME=zm 
+     
+     -e ZM_DB_USER=zmuser
+     
+     -e ZM_DB_PASS=zmpass
+     
+     -e ZM_DB_PORT=3306
+     
+## Make sure that value for ZM_DB_  and MYSQL_ are the same : 
+
+    ZM_DB_NAME ==> MYSQL_DATABASE
+    ZM_DB_USER ==> MYSQL_USER
+    ZM_DB_PASS ==> MYSQL_PASSWORD
+    .......... ==> ........... 
+   
 ## Branch Available at the moment 
 
 quantumobject/docker-zoneminder:1.32
 
 quantumobject/docker-zoneminder:1.34
+
+## Volume for zoneminder container 
+
+   -v /home/linux_user/zm/zoneminder:/var/cache/zoneminder
+   
+   -v /home/linux_user/zm/etc_zm:/etc/zm
+   
+   -v /home/linux_user/zm/config:/config
+   
+   -v /home/linux_user/zm/log:/var/log/zm
 
 ## Accessing the Zoneminder applications
 
@@ -87,7 +124,6 @@ services:
      - MYSQL_USER=zmuser
      - MYSQL_PASSWORD=zmpass
      - MYSQL_DATABASE=zm
-     - MYSQL_ROOT_PASSWORD=mysqlpsswd
      - MYSQL_ROOT_HOST=%
     deploy:
       mode: replicated
@@ -102,8 +138,9 @@ services:
     networks:
       - net
     volumes:
-      - /var/empty
-      - $PWD/backups:/var/backups
+      - $PWD/log:/var/log/zm 
+      - $PWD/etc_zm:/etc/zm
+      - $PWD/config:/config
       - $PWD/zoneminder:/var/cache/zoneminder
       - type: tmpfs
         target: /dev/shm
@@ -127,8 +164,9 @@ services:
     networks:
       - net
     volumes:
-      - /var/empty
-      - $PWD/backups:/var/backups
+      - $PWD/log:/var/log/zm 
+      - $PWD/etc_zm:/etc/zm
+      - $PWD/config:/config
       - $PWD/zoneminder:/var/cache/zoneminder
       - type: tmpfs
         target: /dev/shm
@@ -180,7 +218,6 @@ above docker-compose.yml stack example asume a directory structure at $PWD as is
 ```bash
 $PWD/mysql      # (MySQL Data, drwxr-xr-x 6   27 27)
 $PWD/zoneminder # (directory for images, drwxrwx--- 5 root 33)
-$PWD/backup     # (directory for backups, drwxr-xr-x 2 root root)
 $PWD/conf       # (configuration files, drwxrwxr-x  7 1000 1000, only conf/mysql/my.cnf is required)
 cat conf/mysql/my.cnf
 # For advice on how to change settings please see
